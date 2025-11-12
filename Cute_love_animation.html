@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cute Love Animation — I miss you / I love you</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600;800&family=Pacifico&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1:#ffeef8;
+      --bg2:#ffd9ec;
+      --accent:#ff6fa3;
+      --accent-2:#ff93c2;
+      --white:#fff;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Montserrat, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
+
+    body{
+      background: linear-gradient(135deg,var(--bg1),var(--bg2));
+      display:flex;align-items:center;justify-content:center;
+      padding:2rem;
+    }
+
+    .card{
+      width:min(760px,96vw);
+      background: radial-gradient(1200px 400px at 10% 10%, rgba(255,111,163,0.08), transparent 10%), rgba(255,255,255,0.65);
+      border-radius:28px;
+      padding:32px;
+      box-shadow: 0 10px 30px rgba(255,111,163,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+      backdrop-filter: blur(6px) saturate(120%);
+    }
+
+    .scene{
+      min-height:300px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+    }
+
+    .message{
+      font-family: Pacifico, cursive;
+      font-size: clamp(28px, 6vw, 52px);
+      color:var(--accent);
+      letter-spacing:0.6px;
+      text-shadow: 0 2px 0 rgba(255,255,255,0.4), 0 6px 24px rgba(255,111,163,0.12);
+      display:inline-block;
+      line-height:1;
+      white-space:nowrap;
+      overflow:hidden;
+    }
+
+    /* Typewriter effect */
+    .line{--len:0}
+    .type{
+      display:inline-block;
+      border-right: 3px solid rgba(255,111,163,0.95);
+      padding-right:6px;
+      animation: blink 1s steps(1) infinite;
+      white-space:nowrap;
+      max-width:0ch; /* will be set by JS */
+      overflow:hidden;
+    }
+
+    @keyframes blink{50%{border-color:transparent}}
+
+    /* Heart particles */
+    .hearts{
+      position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:0;
+    }
+
+    .heart{
+      position:absolute;
+      width:20px;height:20px;
+      transform:translate(-50%,-50%) scale(0.9) rotate(-20deg);
+      opacity:0;
+      animation: floatUp 3.8s linear infinite;
+      filter: drop-shadow(0 6px 10px rgba(255,111,163,0.18));
+    }
+
+    .heart:before, .heart:after{
+      content:'';position:absolute;left:50%;top:25%;width:14px;height:22px;border-radius:12px;background:var(--accent);transform-origin:center;transform:translate(-50%,-50%);
+    }
+    .heart:after{left:50%;transform:translate(-50%,-50%) rotate(-45deg)}
+    .heart:before{left:30%;transform:translate(-50%,-50%) rotate(20deg)}
+
+    @keyframes floatUp{
+      0%{transform:translate(-50%,0) scale(0.6) rotate(-20deg); opacity:0}
+      10%{opacity:1}
+      40%{transform:translate(-50%,-40vh) scale(1.05) rotate(10deg)}
+      70%{opacity:0.6}
+      100%{transform:translate(-50%,-70vh) scale(0.9) rotate(40deg); opacity:0}
+    }
+
+    /* Cute ribbon under messages */
+    .ribbon{
+      display:flex;gap:10px;align-items:center;justify-content:center;margin-top:6px;z-index:2;
+    }
+    .badge{
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      color:var(--white);
+      padding:8px 16px;border-radius:999px;font-weight:700;letter-spacing:0.4px;box-shadow:0 6px 20px rgba(255,111,163,0.14);
+      font-size:14px
+    }
+
+    /* Small heart pulse for "I love you" */
+    .love{
+      display:inline-block;margin-left:10px;font-size:22px;transform-origin:center;animation: lovePulse 1.2s ease-in-out infinite;vertical-align:middle;
+    }
+    @keyframes lovePulse{0%{transform:scale(0.92)}50%{transform:scale(1.18)}100%{transform:scale(0.92)}}
+
+    /* footer */
+    .tiny{font-size:12px;color:#a64b77;margin-top:10px;opacity:0.9}
+
+    /* responsive tweaks */
+    @media (max-width:420px){.card{padding:20px;border-radius:18px}}
+  </style>
+</head>
+<body>
+  <div class="card" role="article" aria-label="Cute pink love animation">
+    <div class="scene">
+      <div class="message" aria-hidden="false">
+        <span class="line"> 
+          <span id="line1" class="type" data-text="I miss you..."> </span>
+        </span>
+      </div>
+
+      <div class="ribbon" aria-hidden="true">
+        <div class="badge">Thinking of you</div>
+        <div class="badge">Always</div>
+      </div>
+
+      <div style="height:6px"></div>
+
+      <div class="message" style="color:var(--accent-2);">
+        <span id="line2" class="type" data-text="I love you ❤"> </span>
+        <span class="love" aria-hidden="true">❤</span>
+      </div>
+
+      <div class="tiny">Ayoko ng Puro sorry lang, pano bayan ✨</div>
+    </div>
+
+    <div class="hearts" id="heartsContainer" aria-hidden="true"></div>
+  </div>
+
+  <script>
+    // Simple typewriter that reveals two lines in sequence, then spawns hearts
+    const typingSpeed = 70; // ms per character
+
+    function typeText(el, text){
+      return new Promise(res =>{
+        el.style.maxWidth = '0ch';
+        el.textContent = '';
+        let i=0;
+        function step(){
+          if(i<=text.length){
+            el.textContent = text.slice(0,i);
+            el.style.maxWidth = (i+'ch');
+            i++;
+            setTimeout(step, typingSpeed);
+          } else {
+            // remove cursor after a short pause
+            setTimeout(()=>{el.style.borderRight='0'},300);
+            res();
+          }
+        }
+        step();
+      })
+    }
+
+    async function run(){
+      const l1 = document.getElementById('line1');
+      const l2 = document.getElementById('line2');
+      await typeText(l1, l1.dataset.text);
+      // spawn a few hearts after "I miss you" appears
+      spawnHearts(10);
+      await new Promise(r=>setTimeout(r, 900));
+      await typeText(l2, l2.dataset.text);
+      spawnHearts(18);
+    }
+
+    function spawnHearts(count){
+      const zone = document.getElementById('heartsContainer');
+      const w = zone.clientWidth || window.innerWidth;
+      for(let i=0;i<count;i++){
+        const h = document.createElement('div');
+        h.className = 'heart';
+        // random horizontal position and slight delay
+        const left = Math.random()*100;
+        const delay = (Math.random()*1.4).toFixed(2);
+        const scale = (0.8 + Math.random()*0.9).toFixed(2);
+        h.style.left = left + '%';
+        h.style.bottom = (10 + Math.random()*20) + 'px';
+        h.style.opacity = 0;
+        h.style.animationDelay = delay + 's';
+        h.style.transform = `translate(-50%,0) scale(${scale})`;
+        zone.appendChild(h);
+        // remove after life
+        setTimeout(()=>{h.remove()}, 5200 + Math.random()*800);
+      }
+    }
+
+    // Kick it off
+    document.addEventListener('DOMContentLoaded', run);
+  </script>
+</body>
+</html>
